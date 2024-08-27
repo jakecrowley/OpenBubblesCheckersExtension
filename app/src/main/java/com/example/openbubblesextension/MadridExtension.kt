@@ -15,6 +15,7 @@ import com.bluebubbles.messaging.IMessageViewHandle
 import com.bluebubbles.messaging.ITaskCompleteCallback
 import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
+import java.net.URLDecoder
 
 
 class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
@@ -54,12 +55,17 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 //        context.startActivity(intent)
         handle?.lock()
         Log.i("here", message!!.caption)
-        message.caption = "no way jose"
+
+        Log.i("gamepidgeon", message.url);
+
+        var decryptedGPData = GamePidgeon.decodeFromUrl(message.url);
+        Log.i("gamepidgeon", decryptedGPData);
+
         handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
-            override fun complete() {
-                Log.i("sent!", "done")
-                handle.unlock()
-            }
+          override fun complete() {
+              Log.i("sent!", "done")
+              handle.unlock()
+          }
         })
     }
 
