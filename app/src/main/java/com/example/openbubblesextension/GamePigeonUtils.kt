@@ -5,13 +5,17 @@ import java.net.URLEncoder
 import kotlin.math.pow
 import kotlin.math.floor
 
-object GamePidgeon {
+object GamePigeonUtils {
     fun decodeFromUrl(url: String): String {
         return decrypt(URLDecoder.decode(url.split("&data=")[1], "UTF-8"));
     }
 
     fun encodeToUrl(gpData: String): String {
         return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData), "UTF-8");
+    }
+
+    fun extractReplay(gpData: String): String {
+        return gpData.split("&replay=")[1].split("&")[0]
     }
 
     fun decrypt(encrypted: String): String {
