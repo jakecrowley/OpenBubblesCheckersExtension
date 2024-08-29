@@ -18,6 +18,8 @@ import com.bluebubbles.messaging.IMessageViewHandle
 import com.bluebubbles.messaging.ITaskCompleteCallback
 import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -56,9 +58,10 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
     }
 
     override fun didTapTemplate(message: MadridMessage?, handle: IMessageViewHandle?) {
-//      handle?.lock()
+        handle?.lock()
 
-        Log.i("gamepigeon", message!!.url);
+        val old_url = message!!.url
+        Log.i("gamepigeon", old_url);
 
         var decryptedGPData = GamePigeonUtils.decodeFromUrl(message.url);
         Log.i("gamepigeon", decryptedGPData);
@@ -86,20 +89,25 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
                 Log.d("gamepigeon", old_replay)
                 Log.d("gamepigeon", new_url)
 
-                handle!!.asBinder().run {
-                    Log.d("gamepigeon", "INNER: " + Thread.currentThread().toString());
-
-                    handle.updateMessage(message, object : ITaskCompleteCallback.Stub() {
-                        override fun complete() {
-                            Log.i("sent!", "done")
-                        }
-                    })
-                }
+                message.url = new_url
             }
         }
 
         val filter = IntentFilter("com.example.openbubblesextension.GAME_DATA");
         registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED);
+
+        runBlocking {
+            while (message.url == old_url) {
+                delay(100)
+            }
+        }
+
+        handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
+            override fun complete() {
+                Log.i("sent!", "done")
+                handle.unlock()
+            }
+        })
     }
 
     override fun getLiveView(
