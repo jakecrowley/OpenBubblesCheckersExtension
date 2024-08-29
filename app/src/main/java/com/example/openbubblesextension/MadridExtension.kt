@@ -63,11 +63,13 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
         val old_url = message!!.url
         Log.i("gamepigeon", old_url);
 
-        var decryptedGPData = GamePigeonUtils.decodeFromUrl(message.url);
+        val decryptedGPData = GamePigeonUtils.decodeFromUrl(message.url)
         Log.i("gamepigeon", decryptedGPData);
 
-        var replay = URLDecoder.decode(decryptedGPData, "UTF-8").split("&replay=")[1].split("&")[0]
-        Log.i("gamepigeon", replay);
+        val replay = GamePigeonUtils.extractReplay(decryptedGPData)
+        if (replay != null) {
+            Log.i("gamepigeon", replay)
+        }
 
         val intent = Intent(context, CheckersActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -84,9 +86,15 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
                 var dec = GamePigeonUtils.decodeFromUrl(message.url)
                 var old_replay = GamePigeonUtils.extractReplay(dec)
-                var new_url = GamePigeonUtils.encodeToUrl(dec.replace(old_replay, new_replay))
 
-                Log.d("gamepigeon", old_replay)
+                var new_url: String
+                if (old_replay != null) {
+                    new_url = GamePigeonUtils.encodeToUrl(dec.replace(old_replay, new_replay))
+                } else {
+                    new_url
+                }
+
+                Log.d("gamepigeon", dec)
                 Log.d("gamepigeon", new_url)
 
                 message.url = new_url

@@ -36,7 +36,7 @@ func _ready() -> void:
 	boardHighlight = get_node("BoardHighlight")
 	
 	var prevBoard = replay.split('|')[0].substr(6).split(',');
-	var move = replay.split('|')[1].substr(5).split(',');
+	var move = replay.split('|')[1].split(':')[1].split(',');
 	var nextBoard = replay.split('|')[2].substr(6).split(',');
 	
 	for y in range(0, 8):

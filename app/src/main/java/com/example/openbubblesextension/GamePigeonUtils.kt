@@ -1,21 +1,60 @@
 package com.example.openbubblesextension
 
+import android.content.BroadcastReceiver
+import android.net.Uri
+import com.bluebubbles.messaging.IKeyboardHandle
+import com.bluebubbles.messaging.IMessageViewHandle
 import java.net.URLDecoder
 import java.net.URLEncoder
 import kotlin.math.pow
 import kotlin.math.floor
 
+class CheckersData() {
+    val queryParams = arrayOf("sender", "version", "tver", "ios", "game", "id", "size", "player", "player2", "mode", "avatar1", "avatar2", "replay", "num", "build")
+    val data: HashMap<String, String> = java.util.HashMap()
+
+    constructor(gpData: String) : this() {
+        val uri = Uri.parse(gpData)
+        for (param in queryParams) {
+            val value = uri.getQueryParameter(param)
+            if (value != null) {
+                data[param] = value
+            }
+        }
+
+        data["game"] = "checkers"
+    }
+
+    fun buildUrl(): String {
+        var uri = "?"
+        for (param in queryParams) {
+            if (data.containsValue(param)) {
+                uri += "${param}=${data[param]}&"
+            }
+        }
+        uri = uri.substring(0, uri.length-1) //strip last &
+
+//        return GamePigeonUtils.encodeToUrl(
+//            "?sender=$sender&version=0&tver=$tver&ios=$ios&game=checkers&id=$id&size=4&player=2&player2=$sender&mode=$mode&avatar1=$avatar1&avatar2=$avatar2&replay=$replay&num=$num&build=sYXqxHJGXuxeL"
+//        )
+    }
+}
+
 object GamePigeonUtils {
+
     fun decodeFromUrl(url: String): String {
-        return decrypt(URLDecoder.decode(url.split("&data=")[1], "UTF-8"));
+        return URLDecoder.decode(decrypt(URLDecoder.decode(url.split("&data=")[1], "UTF-8")), "UTF-8")
     }
 
     fun encodeToUrl(gpData: String): String {
-        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData), "UTF-8");
+        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData.replace("|", "%7C")), "UTF-8");
     }
 
-    fun extractReplay(gpData: String): String {
-        return gpData.split("&replay=")[1].split("&")[0]
+    fun extractReplay(gpData: String): String? {
+        if (gpData.contains("&replay=")) {
+            return gpData.split("&replay=")[1].split("&")[0]
+        }
+        return null
     }
 
     fun decrypt(encrypted: String): String {
