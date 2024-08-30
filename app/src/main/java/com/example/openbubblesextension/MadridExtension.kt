@@ -87,15 +87,13 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
                 var dec = GamePigeonUtils.decodeFromUrl(message.url)
                 var old_replay = GamePigeonUtils.extractReplay(dec)
 
-                var new_url: String
-                if (old_replay != null) {
-                    new_url = GamePigeonUtils.encodeToUrl(dec.replace(old_replay, new_replay))
-                } else {
-                    new_url
-                }
-
                 Log.d("gamepigeon", dec)
-                Log.d("gamepigeon", new_url)
+
+                val gameData = CheckersData(dec)
+                gameData.setReplay(new_replay)
+                var new_url = gameData.nextTurnUrl()
+
+                Log.d("gamepigeon", "NEW URL: $new_url")
 
                 message.url = new_url
             }

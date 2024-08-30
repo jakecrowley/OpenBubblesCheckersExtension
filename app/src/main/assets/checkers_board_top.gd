@@ -17,6 +17,8 @@ var prev_move: Array[Vector2]
 
 var has_connected = false
 
+var player = 2
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	var appPlugin := Engine.get_singleton("AppPlugin")
@@ -36,8 +38,17 @@ func _ready() -> void:
 	boardHighlight = get_node("BoardHighlight")
 	
 	var prevBoard = replay.split('|')[0].substr(6).split(',');
-	var move = replay.split('|')[1].split(':')[1].split(',');
+	
+	var replayMoves = Array()
+	
+	for elem in replay.split('|'):
+		var spl = elem.split(':')
+		if spl[0] == 'move' || spl[0] == 'attack':
+			replayMoves.append(elem)
+	
 	var nextBoard = replay.split('|')[2].substr(6).split(',');
+	
+	print(replayMoves)
 	
 	for y in range(0, 8):
 		for x in range(0, 8):
@@ -54,11 +65,18 @@ func _ready() -> void:
 				newPiece.visible = true
 				add_child(newPiece)
 				print(newPiece.name, " : ", newPiece.position)
-				if newPiece.name == move[0] + ',' + move[1]:
-					var newPos = Vector2(redPiece.position.x + (135 * int(move[2])), redPiece.position.y + (135 * (int(move[3])+1)))
+				
+				if replayMoves.size() > 0:
 					var tween = newPiece.get_tree().create_tween()
-					tween.tween_property(newPiece, "position", newPos, 1.0).set_trans(Tween.TRANS_SINE)
-					newPiece.name = move[2] + "," + move[3];
+					for move in replayMoves:
+						var moveType = move.split(':')[0]
+						var movePos = move.split(':')[1].split(',')
+						if newPiece.name == movePos[0] + ',' + movePos[1]:
+							var newPos = Vector2(redPiece.position.x + (135 * int(movePos[2])), redPiece.position.y + (135 * (7 - int(movePos[3]))))
+							tween.tween_property(newPiece, "position", newPos, 1.0).set_trans(Tween.TRANS_SINE)
+							newPiece.name = movePos[2] + "," + movePos[3];
+							if moveType == "attack":
+								jump_piece(int(movePos[0]), int(movePos[1]), int(movePos[2]), int(movePos[3]))
 
 func _set_replay(new_replay: String):
 	replay = new_replay
@@ -81,9 +99,23 @@ func export_replay() -> String:
 	var boardStr: String
 	for val in board:
 		boardStr += val + ","
+		
+	var moveType = "move"
+	if abs(prev_move[0].x - prev_move[1].x) > 1:
+		moveType = "attack"
 	
 	return replay.split('|')[2] + "|move:" + str(prev_move[0].x) + "," + str(prev_move[0].y) + "," + str(prev_move[1].x) + "," + str(prev_move[1].y) + "|board:" + boardStr.substr(0, boardStr.length()-1)
 
+func jump_piece(prevX: int, prevY: int, newX: int, newY: int):
+	var x_step = 1 if newX > prevX else -1
+	var y_step = 1 if newY > prevY else -1
+	var jumpedPiece: Sprite2D = get_node_or_null(str(prevX + x_step) + "," + str(prevY + y_step))
+	if jumpedPiece != null:
+		var tween = jumpedPiece.get_tree().create_tween()
+		var modulate_color = jumpedPiece.self_modulate
+		modulate_color.a = 0.0
+		tween.tween_property(jumpedPiece, "self_modulate", modulate_color, 1.0).set_trans(Tween.TRANS_LINEAR)
+		jumpedPiece.name = "jumped"
 
 func move_piece(piece: Sprite2D, x: int, y: int):
 	var newPos = Vector2(redPiece.position.x + (135 * x), redPiece.position.y + (135 * y))
@@ -121,9 +153,17 @@ func gen_moves():
 		
 	for diagonal in diagonals:
 		var pos = Vector2(clickedPiecePos.x + diagonal.x, clickedPiecePos.y + diagonal.y)
-		if get_node_or_null(str(pos.x) + "," + str(pos.y)) == null:
+		var piece = get_node_or_null(str(pos.x) + "," + str(pos.y))
+		if piece == null:
 			moves.append(pos)
 			add_highlight(pos.x, 7 - pos.y)
+		elif !check_player(piece): #check for jumps
+			var x_step = 1 if pos.x > clickedPiecePos.x else -1
+			var y_step = 1 if pos.y > clickedPiecePos.y else -1
+			var newPos = Vector2(pos.x + x_step, pos.y + y_step)
+			if get_node_or_null(str(newPos.x) + "," + str(newPos.y)) == null:
+				moves.append(newPos)
+				add_highlight(newPos.x, 7 - newPos.y)
 
 
 func undo_move():
@@ -133,6 +173,13 @@ func undo_move():
 	(get_node("../UndoButton") as Button).disabled = true
 	(get_node("../SendButton") as Button).disabled = true
 
+func check_player(piece: Sprite2D) -> bool:
+	var type = piece.texture.resource_path
+	if player == 1 and type.contains("black"):
+		return true
+	elif player == 2 and type.contains("red"):
+		return true
+	return false
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -143,11 +190,12 @@ func _input(event: InputEvent) -> void:
 			
 			var clickedPiece: Sprite2D = get_node_or_null(str(x) + "," + str(7-y))
 			if clickedPiece != null:
-				clear_highlights()
-				clicked_piece = clickedPiece
-				clickedPiecePos = Vector2(x, 7-y)
-				add_highlight(x, y)
-				gen_moves()
+				if check_player(clickedPiece):
+					clear_highlights()
+					clicked_piece = clickedPiece
+					clickedPiecePos = Vector2(x, 7-y)
+					add_highlight(x, y)
+					gen_moves()
 			elif clicked_piece != null and moves.has(Vector2(x, 7-y)):
 				move_piece(clicked_piece, x, y)
 				clicked_piece = null
@@ -155,6 +203,8 @@ func _input(event: InputEvent) -> void:
 				has_moved = true
 				prev_move.insert(0, clickedPiecePos)
 				prev_move.insert(1, Vector2(x, 7-y))
+				if abs(prev_move[0].x - prev_move[1].x) > 1:
+					jump_piece(prev_move[0].x, prev_move[0].y, prev_move[1].x, prev_move[1].y)
 				(get_node("../UndoButton") as Button).disabled = false
 				(get_node("../SendButton") as Button).disabled = false
 				
