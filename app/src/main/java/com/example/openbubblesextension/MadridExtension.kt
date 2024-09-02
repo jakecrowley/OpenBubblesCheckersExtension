@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat.RECEIVER_EXPORTED
@@ -20,8 +18,6 @@ import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import java.net.URLDecoder
-import java.net.URLEncoder
 
 
 class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
@@ -29,10 +25,9 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
     companion object {
         var currentKeyboardHandle: IKeyboardHandle? = null
         private var broadcastReceiver: BroadcastReceiver? = null
-        private var currentHandle: IMessageViewHandle? = null
     }
 
-    private var callback: IViewUpdateCallback? = null;
+    private var callback: IViewUpdateCallback? = null
 
     override fun keyboardClosed() {
         currentKeyboardHandle = null
@@ -40,7 +35,7 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
     override fun keyboardOpened(callback: IViewUpdateCallback?, handle: IKeyboardHandle?): RemoteViews {
         this.callback = callback
-        var view = RemoteViews(context.packageName, R.layout.keyboard)
+        val view = RemoteViews(context.packageName, R.layout.keyboard)
 
         currentKeyboardHandle = handle
 
@@ -59,16 +54,22 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
     override fun didTapTemplate(message: MadridMessage?, handle: IMessageViewHandle?) {
         handle?.lock()
+        if (message?.url == null) {
+            Log.e("gamepigeon", "MadridMessage tapped but message or url was null?")
+            return
+        }
 
-        val old_url = message!!.url
-        Log.i("gamepigeon", old_url);
+        val oldUrl = message.url
+        Log.i("gamepigeon", "Message URL: $oldUrl")
 
-        val decryptedGPData = GamePigeonUtils.decodeFromUrl(message.url)
-        Log.i("gamepigeon", decryptedGPData);
+        val decryptedGPString = GamePigeonUtils.decodeFromUrl(message.url)
+        Log.i("gamepigeon", "Deobfed GP Data URL: $decryptedGPString")
 
-        val replay = GamePigeonUtils.extractReplay(decryptedGPData)
+        val gameData = CheckersData(decryptedGPString)
+
+        val replay = gameData.getReplay()
         if (replay != null) {
-            Log.i("gamepigeon", replay)
+            Log.i("gamepigeon", "GamePigeon Replay: $replay")
         }
 
         val intent = Intent(context, CheckersActivity::class.java)
@@ -76,41 +77,33 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
         intent.putExtra("replay", replay)
         context.startActivity(intent)
 
-        Log.d("gamepigeon", "OUTER: " + Thread.currentThread())
-
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
+                val newReplay = intent.getStringExtra("send_replay") as String
+                Log.d("gamepigeon", "Got new replay: $newReplay")
 
-                val new_replay = intent.getStringExtra("send_replay") as String
-                Log.d("gamepigeon", "I GOT IT $new_replay")
+                gameData.setReplay(newReplay)
+                val newUrl = gameData.nextTurnUrl()
 
-                var dec = GamePigeonUtils.decodeFromUrl(message.url)
-                var old_replay = GamePigeonUtils.extractReplay(dec)
+                Log.d("gamepigeon", "New GP Data URL: $newUrl")
 
-                Log.d("gamepigeon", dec)
-
-                val gameData = CheckersData(dec)
-                gameData.setReplay(new_replay)
-                var new_url = gameData.nextTurnUrl()
-
-                Log.d("gamepigeon", "NEW URL: $new_url")
-
-                message.url = new_url
+                message.url = newUrl
             }
         }
 
-        val filter = IntentFilter("com.example.openbubblesextension.GAME_DATA");
-        registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED);
+        val filter = IntentFilter("com.example.openbubblesextension.GAME_DATA")
+        registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED)
 
+        //TODO: WORKAROUND remove once OpenBubbles fixes multithreading issue
         runBlocking {
-            while (message.url == old_url) {
+            while (message.url == oldUrl) {
                 delay(100)
             }
         }
 
         handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
             override fun complete() {
-                Log.i("sent!", "done")
+                Log.i("gamepigeon", "Sent updated game message.")
                 handle.unlock()
             }
         })
@@ -122,7 +115,7 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
         handle: IMessageViewHandle?
     ): RemoteViews {
         Log.i("live view", "init")
-        var view = RemoteViews(context.packageName, R.layout.livemsg)
+        val view = RemoteViews(context.packageName, R.layout.livemsg)
 
         val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.my_image)
         view.setImageViewBitmap(R.id.imageView, bitmap)
@@ -131,7 +124,7 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
     }
 
     override fun messageUpdated(message: MadridMessage?) {
-        Log.i("update", "message");
+        Log.i("update", "message")
     }
 
 }

@@ -1,16 +1,10 @@
 package com.example.openbubblesextension
 
-import android.content.BroadcastReceiver
-import android.net.Uri
 import android.util.Base64
-import android.util.Log
-import com.bluebubbles.messaging.IKeyboardHandle
-import com.bluebubbles.messaging.IMessageViewHandle
 import java.net.URLDecoder
 import java.net.URLEncoder
-import java.nio.charset.Charset
-import kotlin.math.pow
 import kotlin.math.floor
+import kotlin.math.pow
 import kotlin.random.Random
 
 class CheckersData() {
@@ -55,6 +49,10 @@ class CheckersData() {
         return GamePigeonUtils.encodeToUrl(url)
     }
 
+    fun getReplay(): String? {
+        return data["replay"]
+    }
+
     fun setReplay(replay: String): CheckersData {
         data["replay"] = replay
         return this
@@ -77,14 +75,7 @@ object GamePigeonUtils {
     }
 
     fun encodeToUrl(gpData: String): String {
-        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData.replace("|", "%7C").replace(" ", "%20")), "UTF-8");
-    }
-
-    fun extractReplay(gpData: String): String? {
-        if (gpData.contains("&replay=")) {
-            return gpData.split("&replay=")[1].split("&")[0]
-        }
-        return null
+        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData.replace("|", "%7C").replace(" ", "%20")), "UTF-8")
     }
 
     fun getAvatar(): String {
@@ -113,8 +104,8 @@ object GamePigeonUtils {
         return output
     }
 
-    fun encrypt(plaintext: String): String {
-        var plaintext = plaintext
+    fun encrypt(pt: String): String {
+        var plaintext = pt
         val rand = Rand48(0)
         rand.srand(plaintext.length * 0xefL)
 
