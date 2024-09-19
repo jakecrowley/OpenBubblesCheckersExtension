@@ -15,6 +15,7 @@ import org.godotengine.godot.plugin.UsedByGodot
 class AppPlugin(godot: Godot, val intent: Intent, val _activity: Activity) : GodotPlugin(godot) {
 
     private var replay = "";
+    private var player = -1;
 
     companion object {
         val SET_REPLAY_SIGNAL = SignalInfo("set_replay", String::class.java)
@@ -40,13 +41,22 @@ class AppPlugin(godot: Godot, val intent: Intent, val _activity: Activity) : God
         _activity.finish()
     }
 
+    @UsedByGodot
+    fun getPlayer(): Int {
+        return this.player
+    }
+
+    fun setPlayer(player: Int) {
+        this.player = player
+    }
+
     /**
      * Used to emit a signal to the gdscript logic to update the gltf being shown.
      *
      * @param glbFilepath Filepath of the gltf asset to be shown
      */
     internal fun setReplay(replay: String) {
-        Log.i("gamepigeon", replay);
         this.replay = replay
+        Log.i("gamepigeon", "Set replay: $this.replay")
     }
 }

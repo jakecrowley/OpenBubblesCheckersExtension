@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c8rkim5ojkkq8"
-path="res://.godot/imported/checker_red.png-071415e586852e48c9e05b8597ca4393.ctex"
+uid="uid://c4kfr0vwbpnfp"
+path="res://.godot/imported/checker_red_king.png-759093fb68191972ea83a2ff96aa29a2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://checker_red.png"
-dest_files=["res://.godot/imported/checker_red.png-071415e586852e48c9e05b8597ca4393.ctex"]
+source_file="res://checker_red_king.png"
+dest_files=["res://.godot/imported/checker_red_king.png-759093fb68191972ea83a2ff96aa29a2.ctex"]
 
 [params]
 

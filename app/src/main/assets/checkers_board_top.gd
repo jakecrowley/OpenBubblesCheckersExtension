@@ -2,6 +2,9 @@ extends Sprite2D
 class_name CheckersBoardTop
 
 #var replay = "board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0|move:5,2,4,3|board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,0,0,2,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0";
+var black_king_texture = preload("res://checker_black_king.png")
+var red_king_rexture = preload("res://checker_red_king.png")
+
 var replay = null;
 var redPiece: Sprite2D
 
@@ -17,7 +20,7 @@ var prev_move: Array[Vector2]
 
 var has_connected = false
 
-var player = 2
+var player = -1
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -32,6 +35,9 @@ func _ready() -> void:
 	
 	if replay == null:
 		return
+		
+	player = appPlugin.getPlayer()
+	print("got the player: ", player)
 		
 	redPiece = get_node("CheckerPieceRed")
 	var blackPiece: Sprite2D = get_node("CheckerPieceBlack")
@@ -91,9 +97,10 @@ func export_replay() -> String:
 		for x in range(0, 8):
 			var piece: Sprite2D = get_node_or_null(str(x) + "," + str(7-y))
 			if piece != null:
-				if piece.texture.resource_path.contains("red"):
+				var color = get_piece_color(piece)
+				if color == "red":
 					board[(7 - y) * 8 + x] = "1"
-				elif piece.texture.resource_path.contains("black"):
+				elif color == "black":
 					board[(7 - y) * 8 + x] = "2"
 	
 	var boardStr: String
@@ -104,8 +111,13 @@ func export_replay() -> String:
 	if abs(prev_move[0].x - prev_move[1].x) > 1:
 		moveType = "attack"
 	
-	return replay.split('|')[2] + "|move:" + str(prev_move[0].x) + "," + str(prev_move[0].y) + "," + str(prev_move[1].x) + "," + str(prev_move[1].y) + "|board:" + boardStr.substr(0, boardStr.length()-1)
-
+	if player == 1:
+		player = 2
+	elif player == 2:
+		player = 1
+	
+	return replay.split('|')[2] + "|move:" + str(prev_move[0].x) + "," + str(7 - prev_move[0].y) + "," + str(prev_move[1].x) + "," + str(prev_move[1].y) + "|board:" + boardStr.substr(0, boardStr.length()-1)
+	
 func jump_piece(prevX: int, prevY: int, newX: int, newY: int):
 	var x_step = 1 if newX > prevX else -1
 	var y_step = 1 if newY > prevY else -1
@@ -121,7 +133,21 @@ func move_piece(piece: Sprite2D, x: int, y: int):
 	var newPos = Vector2(redPiece.position.x + (135 * x), redPiece.position.y + (135 * y))
 	var tween = piece.get_tree().create_tween()
 	tween.tween_property(piece, "position", newPos, 0.5).set_trans(Tween.TRANS_SINE)
+	var color = get_piece_color(piece)
+	if (color == "black" and (7-y) == 7) or (color == "red" and (7-y) == 0):
+		tween.tween_callback(set_checker_king.bind(piece, color))
 	piece.name = str(x) + "," + str(7-y)
+
+func set_checker_king(piece: Sprite2D, color: String):
+	if color == "red":
+		piece.texture = red_king_rexture
+	elif color == "black":
+		piece.texture = black_king_texture
+		
+func is_checker_king(piece: Sprite2D) -> bool:
+	if piece.texture.resource_path.contains("king"):
+		return true
+	return false
 
 func add_highlight(x: int, y: int):
 	var newHighlight: BoardHighlight = boardHighlight.duplicate()
@@ -139,15 +165,22 @@ func clear_highlights():
 		highlight.free()
 	highlights.clear()
 
+func get_piece_color(piece: Sprite2D) -> String:
+	if piece.texture.resource_path.contains("red"):
+		return "red"
+	elif piece.texture.resource_path.contains("black"):
+		return "black"
+	return "unknown"
 
 func gen_moves():
 	moves.clear()
 	var diagonals: Array[Vector2]
-	var name = clicked_piece.texture.resource_path
-	if name.contains("black"):
+	var color = get_piece_color(clicked_piece)
+	var isKing = is_checker_king(clicked_piece)
+	if color == "black" or isKing:
 		diagonals.append(Vector2(-1, 1))
 		diagonals.append(Vector2(1, 1))
-	elif name.contains("red"):
+	elif color == "red" or isKing:
 		diagonals.append(Vector2(1, -1));
 		diagonals.append(Vector2(-1, -1));
 		
@@ -174,10 +207,10 @@ func undo_move():
 	(get_node("../SendButton") as Button).disabled = true
 
 func check_player(piece: Sprite2D) -> bool:
-	var type = piece.texture.resource_path
-	if player == 1 and type.contains("black"):
+	var color = get_piece_color(piece)
+	if player == 1 and color == "black":
 		return true
-	elif player == 2 and type.contains("red"):
+	elif player == 2 and color == "red":
 		return true
 	return false
 
