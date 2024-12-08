@@ -67,9 +67,12 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
         val gameData = CheckersData(decryptedGPString)
 
-        val replay = gameData.getReplay()
+        var replay = gameData.getReplay()
         if (replay != null) {
             Log.i("gamepigeon", "GamePigeon Replay: $replay")
+        } else {
+            Log.i("gamepigeon", "No replay, first move")
+            replay = "board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0|move:-1,-1,-1,-1|board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0"
         }
 
         val intent = Intent(context, CheckersActivity::class.java)
