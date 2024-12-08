@@ -116,7 +116,7 @@ func export_replay() -> String:
 	elif player == 2:
 		player = 1
 	
-	return replay.split('|')[2] + "|move:" + str(prev_move[0].x) + "," + str(7 - prev_move[0].y) + "," + str(prev_move[1].x) + "," + str(prev_move[1].y) + "|board:" + boardStr.substr(0, boardStr.length()-1)
+	return replay.split('|')[2] + "|move:" + str(prev_move[0].x) + "," + str(prev_move[0].y) + "," + str(prev_move[1].x) + "," + str(prev_move[1].y) + "|board:" + boardStr.substr(0, boardStr.length()-1)
 	
 func jump_piece(prevX: int, prevY: int, newX: int, newY: int):
 	var x_step = 1 if newX > prevX else -1

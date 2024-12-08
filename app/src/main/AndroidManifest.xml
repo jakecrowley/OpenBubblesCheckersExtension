@@ -33,7 +33,7 @@
                 android:name="madrid_icon"
                 android:resource="@drawable/madrid_icon" />
             <meta-data
-                android:name="matrid_id"
+                android:name="madrid_id"
                 android:value="@integer/madrid_id" />
             <meta-data
                 android:name="madrid_name"

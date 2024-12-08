@@ -91,29 +91,17 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
                 message.url = newUrl
 
-                Handler(Looper.getMainLooper()).post {
-                    handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
-                        override fun complete() {
-                            Log.i("gamepigeon", "Sent updated game message.")
-                            handle.unlock()
-                        }
-                    })
-                }
+                handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
+                    override fun complete() {
+                        Log.i("gamepigeon", "Sent updated game message.")
+                        handle.unlock()
+                    }
+                })
             }
         }
 
         val filter = IntentFilter("com.example.openbubblesextension.GAME_DATA")
         registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED)
-
-        //TODO: WORKAROUND remove once OpenBubbles fixes multithreading issue
-//        val latch = CountDownLatch(1)
-//        run {
-//            while (message.url == oldUrl) {
-//                Thread.sleep(100)
-//            }
-//            latch.countDown()
-//        }
-//        latch.await()
     }
 
     override fun getLiveView(
