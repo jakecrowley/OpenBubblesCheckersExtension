@@ -32,6 +32,15 @@
             <meta-data
                 android:name="madrid_icon"
                 android:resource="@drawable/madrid_icon" />
+            <meta-data
+                android:name="matrid_id"
+                android:value="@integer/madrid_id" />
+            <meta-data
+                android:name="madrid_name"
+                android:value="@string/madrid_name" />
+            <meta-data
+                android:name="madrid_bundle_id"
+                android:value="@string/madrid_bundle_id" />
         </service>
     </application>
 

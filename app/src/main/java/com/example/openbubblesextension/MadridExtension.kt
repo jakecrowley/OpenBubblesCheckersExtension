@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat.RECEIVER_EXPORTED
@@ -18,6 +20,7 @@ import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CountDownLatch
 
 
 class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
@@ -67,17 +70,13 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
         val gameData = CheckersData(decryptedGPString)
 
-        var replay = gameData.getReplay()
-        if (replay != null) {
-            Log.i("gamepigeon", "GamePigeon Replay: $replay")
-        } else {
-            Log.i("gamepigeon", "No replay, first move")
-            replay = "board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0|move:-1,-1,-1,-1|board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0"
-        }
+        val replay = gameData.getReplay()
+        Log.i("gamepigeon", "GamePigeon Replay: $replay")
 
         val intent = Intent(context, CheckersActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         intent.putExtra("replay", replay)
+        intent.putExtra("player", gameData.getPlayer())
         context.startActivity(intent)
 
         broadcastReceiver = object : BroadcastReceiver() {
@@ -91,6 +90,15 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
                 Log.d("gamepigeon", "New GP Data URL: $newUrl")
 
                 message.url = newUrl
+
+                Handler(Looper.getMainLooper()).post {
+                    handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
+                        override fun complete() {
+                            Log.i("gamepigeon", "Sent updated game message.")
+                            handle.unlock()
+                        }
+                    })
+                }
             }
         }
 
@@ -98,18 +106,14 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
         registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED)
 
         //TODO: WORKAROUND remove once OpenBubbles fixes multithreading issue
-        runBlocking {
-            while (message.url == oldUrl) {
-                delay(100)
-            }
-        }
-
-        handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
-            override fun complete() {
-                Log.i("gamepigeon", "Sent updated game message.")
-                handle.unlock()
-            }
-        })
+//        val latch = CountDownLatch(1)
+//        run {
+//            while (message.url == oldUrl) {
+//                Thread.sleep(100)
+//            }
+//            latch.countDown()
+//        }
+//        latch.await()
     }
 
     override fun getLiveView(

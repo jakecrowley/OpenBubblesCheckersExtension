@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="madrid_id">1124197642</integer>
+    <string name="madrid_name">GamePigeon</string>
+    <string name="madrid_bundle_id">com.apple.messages.MSMessageExtensionBalloonPlugin:EWFNLB79LQ:com.gamerdelights.gamepigeon.ext</string>
+</resources>

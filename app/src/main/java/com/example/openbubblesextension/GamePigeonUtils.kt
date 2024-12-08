@@ -32,7 +32,7 @@ class CheckersData() {
         val id = Base64.encode(randomBytes, Base64.DEFAULT)
 
         return GamePigeonUtils.encodeToUrl(
-            "?sender=$sender&version=5&tver=5&ios=18.0&start=&caption=Let's play Checkers!&id=$id&player=2&player2=$sender&avatar2=${GamePigeonUtils.getAvatar()}&game=checkers&game_name=Checkers&mode=$mode&num=1&build=pfvgT"
+            "?sender=$sender&version=5&tver=5&ios=18.0&start=&caption=Let's play Checkers!&id=$id&player=1&player2=$sender&avatar2=${GamePigeonUtils.getAvatar()}&game=checkers&game_name=Checkers&mode=$mode&num=1&build=pfvgT"
         )
     }
 
@@ -49,8 +49,16 @@ class CheckersData() {
         return GamePigeonUtils.encodeToUrl(url)
     }
 
-    fun getReplay(): String? {
-        return data["replay"]
+    fun getPlayer(): Int {
+        return data["player"]!!.toInt()
+    }
+
+    fun getReplay(): String {
+        var replay = data["replay"]
+        if (replay == null) {
+            replay = GamePigeonUtils.defaultCheckersReplay()
+        }
+        return replay
     }
 
     fun setReplay(replay: String): CheckersData {
@@ -68,6 +76,10 @@ object GamePigeonUtils {
             data[spl[0]] = spl[1]
         }
         return data
+    }
+
+    fun defaultCheckersReplay(): String {
+        return "board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0|move:-1,-1,-1,-1|board:0,2,0,2,0,2,0,2,2,0,2,0,2,0,2,0,0,2,0,2,0,2,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0"
     }
 
     fun decodeFromUrl(url: String): String {
