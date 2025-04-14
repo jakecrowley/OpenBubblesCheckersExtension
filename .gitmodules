@@ -1,0 +1,3 @@
+[submodule "gamepidgeon-checkers"]
+	path = app/src/main/assets
+	url = git@github.com:jakecrowley/gamepidgeon-checkers.git
