@@ -12,6 +12,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat.RECEIVER_EXPORTED
 import androidx.core.content.ContextCompat.registerReceiver
+
 import com.bluebubbles.messaging.IKeyboardHandle
 import com.bluebubbles.messaging.IMadridExtension
 import com.bluebubbles.messaging.IMessageViewHandle
@@ -28,6 +29,7 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
     companion object {
         var currentKeyboardHandle: IKeyboardHandle? = null
         private var broadcastReceiver: BroadcastReceiver? = null
+        private var currentGameData: CheckersData? = null
     }
 
     private var callback: IViewUpdateCallback? = null

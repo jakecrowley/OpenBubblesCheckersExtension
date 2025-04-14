@@ -24,8 +24,7 @@ class CheckersActivity : GodotActivity() {
             insets
         }
 
-        setReplay(intent.getStringExtra("replay")!!)
-        setPlayer(intent.getIntExtra("player", -1))
+        setReplay(intent.getIntExtra("player", 0), intent.getStringExtra("replay")!!)
     }
 
     private fun getOrCreateAppPlugin() {
@@ -34,14 +33,9 @@ class CheckersActivity : GodotActivity() {
         }
     }
 
-    private fun setReplay(replay: String) {
+    private fun setReplay(player: Int, replay: String) {
         getOrCreateAppPlugin()
-        appPlugin!!.setReplay(replay)
-    }
-
-    private fun setPlayer(player: Int) {
-        getOrCreateAppPlugin()
-        appPlugin!!.setPlayer(player)
+        appPlugin!!.setReplay(player, replay)
     }
 
     override fun getHostPlugins(godot: Godot): Set<GodotPlugin> {

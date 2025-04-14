@@ -1,6 +1,7 @@
 package com.example.openbubblesextension
 
 import android.util.Base64
+import android.util.Log
 import java.net.URLDecoder
 import java.net.URLEncoder
 import kotlin.math.floor
@@ -8,32 +9,31 @@ import kotlin.math.pow
 import kotlin.random.Random
 
 class CheckersData() {
-    private val queryParams = arrayOf("sender", "version", "tver", "ios", "game", "id", "size", "player", "player2", "mode", "avatar1", "avatar2", "replay", "num", "build")
+    private val queryParams = arrayOf("sender", "player1", "version", "tver", "ios", "game", "id", "size", "player", "player2", "mode", "avatar1", "avatar2", "replay", "num", "build")
     private val data: HashMap<String, String> = java.util.HashMap()
 
     private val sender: String = "B9A474B9-3D21-4B7B-9331-964079B3A605cHGxEL"
 
     constructor(gpData: String = "") : this() {
-        if (gpData == "") {
-            return
+        Log.e("openbubbles", "BRUHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
+
+        var initData = gpData
+        if (initData.isEmpty()) {
+            val id = getRandID()
+            initData = "?sender=$sender&version=5&tver=5&ios=18.0&start=&caption=Let's play Checkers!&id=$id&player=2&player2=$sender&avatar2=${GamePigeonUtils.getAvatar()}&game=checkers&game_name=Checkers&mode=n&num=1&build=pfvgT"
         }
 
-        val dataParams = GamePigeonUtils.parseArgsFromUrl(gpData)
+        val dataParams = GamePigeonUtils.parseArgsFromUrl(initData)
         for (param in queryParams) {
             if (dataParams.contains(param)) {
                 data[param] = dataParams[param]!!
             }
         }
-    }
 
-    fun startGameUrl(mode: String): String {
-        val randomBytes = ByteArray(12)
-        Random.nextBytes(randomBytes)
-        val id = Base64.encode(randomBytes, Base64.DEFAULT)
-
-        return GamePigeonUtils.encodeToUrl(
-            "?sender=$sender&version=5&tver=5&ios=18.0&start=&caption=Let's play Checkers!&id=$id&player=1&player2=$sender&avatar2=${GamePigeonUtils.getAvatar()}&game=checkers&game_name=Checkers&mode=$mode&num=1&build=pfvgT"
-        )
+        if (gpData.isNotEmpty()){
+            val playerNum = data["player"]!!.toInt()
+            data["player"] = if (playerNum == 1) "2" else "1"
+        }
     }
 
     fun nextTurnUrl(): String {
@@ -46,6 +46,8 @@ class CheckersData() {
             }
         }
         url = url.substring(0, url.length-1) //strip last &
+
+        Log.d("gamepigeon", "NEW GAME (unobf): $url")
         return GamePigeonUtils.encodeToUrl(url)
     }
 
@@ -64,6 +66,12 @@ class CheckersData() {
     fun setReplay(replay: String): CheckersData {
         data["replay"] = replay
         return this
+    }
+
+    private fun getRandID(): String {
+        val randomBytes = ByteArray(12)
+        Random.nextBytes(randomBytes)
+        return Base64.encode(randomBytes, Base64.DEFAULT).toString(Charsets.US_ASCII)
     }
 }
 
@@ -87,7 +95,7 @@ object GamePigeonUtils {
     }
 
     fun encodeToUrl(gpData: String): String {
-        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData.replace("|", "%7C").replace(" ", "%20")), "UTF-8")
+        return "data:?ver=51&data=" + URLEncoder.encode(encrypt(gpData), "UTF-8")
     }
 
     fun getAvatar(): String {
