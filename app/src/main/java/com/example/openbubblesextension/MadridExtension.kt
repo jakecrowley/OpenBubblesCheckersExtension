@@ -6,8 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
-import android.os.Handler
-import android.os.Looper
+import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat.RECEIVER_EXPORTED
@@ -19,9 +18,6 @@ import com.bluebubbles.messaging.IMessageViewHandle
 import com.bluebubbles.messaging.ITaskCompleteCallback
 import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.CountDownLatch
 
 
 class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
