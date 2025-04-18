@@ -4,15 +4,13 @@ import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import org.godotengine.godot.Godot
 import org.godotengine.godot.GodotActivity
 import org.godotengine.godot.plugin.GodotPlugin
-import kotlinx.coroutines.launch
 
 
 class CheckersActivity : GodotActivity() {
-    internal var appPlugin: AppPlugin? = null
+    private var appPlugin: AppPlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,5 +39,13 @@ class CheckersActivity : GodotActivity() {
     override fun getHostPlugins(godot: Godot): Set<GodotPlugin> {
         getOrCreateAppPlugin()
         return setOf(appPlugin!!)
+    }
+
+    override fun onGodotForceQuit(instance: Godot) {
+        runOnUiThread {
+            MadridExtension.currentMessageHandle?.unlock()
+            activity!!.finish()
+        }
+        super.onGodotForceQuit(instance)
     }
 }

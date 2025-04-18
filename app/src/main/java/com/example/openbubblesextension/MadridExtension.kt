@@ -1,21 +1,15 @@
 package com.example.openbubblesextension
 
 import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
-import androidx.core.content.ContextCompat.RECEIVER_EXPORTED
-import androidx.core.content.ContextCompat.registerReceiver
 
 import com.bluebubbles.messaging.IKeyboardHandle
 import com.bluebubbles.messaging.IMadridExtension
 import com.bluebubbles.messaging.IMessageViewHandle
-import com.bluebubbles.messaging.ITaskCompleteCallback
 import com.bluebubbles.messaging.IViewUpdateCallback
 import com.bluebubbles.messaging.MadridMessage
 
@@ -24,8 +18,9 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
     companion object {
         var currentKeyboardHandle: IKeyboardHandle? = null
-        private var broadcastReceiver: BroadcastReceiver? = null
-        private var currentGameData: CheckersData? = null
+        var currentGameData: CheckersData? = null
+        var currentMessageHandle: IMessageViewHandle? = null
+        var currentMessage: MadridMessage? = null
     }
 
     private var callback: IViewUpdateCallback? = null
@@ -54,9 +49,15 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
     }
 
     override fun didTapTemplate(message: MadridMessage?, handle: IMessageViewHandle?) {
-        handle?.lock()
-        if (message?.url == null) {
-            Log.e("gamepigeon", "MadridMessage tapped but message or url was null?")
+        if (handle == null || message == null) {
+            Log.e("gamepigeon", "Uh oh handle or message is null!")
+            return
+        }
+
+        handle.lock()
+
+        if (message.url == null) {
+            Log.e("gamepigeon", "MadridMessage tapped but message url was null?")
             return
         }
 
@@ -68,38 +69,23 @@ class MadridExtension(private val context: Context) : IMadridExtension.Stub() {
 
         val gameData = CheckersData(decryptedGPString)
 
+        if (!gameData.isTurn()) {
+            Log.i("gamepigeon", "IT IS NOT YOUR TURN")
+            return
+        }
+
         val replay = gameData.getReplay()
         Log.i("gamepigeon", "GamePigeon Replay: $replay")
+
+        currentMessage = message
+        currentGameData = gameData
+        currentMessageHandle = handle
 
         val intent = Intent(context, CheckersActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         intent.putExtra("replay", replay)
         intent.putExtra("player", gameData.getPlayer())
         context.startActivity(intent)
-
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                val newReplay = intent.getStringExtra("send_replay") as String
-                Log.d("gamepigeon", "Got new replay: $newReplay")
-
-                gameData.setReplay(newReplay)
-                val newUrl = gameData.nextTurnUrl()
-
-                Log.d("gamepigeon", "New GP Data URL: $newUrl")
-
-                message.url = newUrl
-
-                handle!!.updateMessage(message, object : ITaskCompleteCallback.Stub() {
-                    override fun complete() {
-                        Log.i("gamepigeon", "Sent updated game message.")
-                        handle.unlock()
-                    }
-                })
-            }
-        }
-
-        val filter = IntentFilter("com.example.openbubblesextension.GAME_DATA")
-        registerReceiver(context, broadcastReceiver, filter, RECEIVER_EXPORTED)
     }
 
     override fun getLiveView(

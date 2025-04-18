@@ -3,6 +3,7 @@ package com.example.openbubblesextension
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import com.bluebubbles.messaging.ITaskCompleteCallback
 import org.godotengine.godot.Godot
 import org.godotengine.godot.plugin.GodotPlugin
 import org.godotengine.godot.plugin.SignalInfo
@@ -34,10 +35,30 @@ class AppPlugin(godot: Godot, val intent: Intent, val _activity: Activity) : God
     fun sendReplay(replay: String) {
         Log.d("gamepigeon", "sendReplay: $replay")
 
-        val intent = Intent("com.example.openbubblesextension.GAME_DATA")
-        intent.putExtra("send_replay", replay);
-        _activity.sendBroadcast(intent)
-        _activity.finish()
+        runOnUiThread {
+            val gameData = MadridExtension.currentGameData
+            val message = MadridExtension.currentMessage
+            val handle = MadridExtension.currentMessageHandle
+            if (gameData == null || handle == null || message == null) {
+                Log.e("gamepigeon", "Data required does not exist!")
+                _activity.finish()
+            } else {
+                gameData.setReplay(replay)
+                val newUrl = gameData.nextTurnUrl()
+
+                Log.d("gamepigeon", "New GP Data URL: $newUrl")
+
+                message.url = newUrl
+
+                handle.updateMessage(message, object : ITaskCompleteCallback.Stub() {
+                    override fun complete() {
+                        Log.i("gamepigeon", "Sent updated game message.")
+                        handle.unlock()
+                        _activity.finish()
+                    }
+                })
+            }
+        }
     }
 
     /**

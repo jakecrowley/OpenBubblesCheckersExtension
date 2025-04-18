@@ -23,7 +23,7 @@ class KeyboardClickReceiver : BroadcastReceiver() {
         val b = baos.toByteArray()
         val imageEncoded: String = Base64.encodeToString(b, Base64.NO_WRAP)
 
-        var gameUrl = CheckersData("").nextTurnUrl()
+        val gameUrl = CheckersData("").nextTurnUrl()
         Log.d("gamepigeon", "NEW GAME: $gameUrl")
 
         val message = MadridMessage().apply {

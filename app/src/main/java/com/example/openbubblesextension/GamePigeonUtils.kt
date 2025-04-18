@@ -12,11 +12,9 @@ class CheckersData() {
     private val queryParams = arrayOf("sender", "player1", "version", "tver", "ios", "game", "id", "size", "player", "player2", "mode", "avatar1", "avatar2", "replay", "num", "build")
     private val data: HashMap<String, String> = java.util.HashMap()
 
-    private val sender: String = "B9A474B9-3D21-4B7B-9331-964079B3A605cHGxEL"
+    private val sender: String = "B9A474B9-3D21-4B7B-9331-964079B3A605cHGxE5"
 
     constructor(gpData: String = "") : this() {
-        Log.e("openbubbles", "BRUHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
-
         var initData = gpData
         if (initData.isEmpty()) {
             val id = getRandID()
@@ -49,6 +47,21 @@ class CheckersData() {
 
         Log.d("gamepigeon", "NEW GAME (unobf): $url")
         return GamePigeonUtils.encodeToUrl(url)
+    }
+
+    fun isTurn(): Boolean {
+        if (data.contains("sender") && !data["sender"].equals(sender)) {
+            if (!data.contains("player1"))
+                return true
+        }
+
+        if (data.contains("player1") && data["player1"].equals(sender) && data["player"].equals("1"))
+            return true
+
+        if (data.contains("player2") && data["player2"].equals(sender) && data["player"].equals("2"))
+            return true
+
+        return false
     }
 
     fun getPlayer(): Int {
