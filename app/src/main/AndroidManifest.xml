@@ -15,10 +15,6 @@
         <activity
             android:name=".CheckersActivity"
             android:exported="false" />
-        <activity
-            android:name=".MessageActivity"
-            android:exported="false"
-            android:theme="@style/Theme.OpenBubblesSampleExtension" />
 
         <receiver
             android:name=".KeyboardClickReceiver"
